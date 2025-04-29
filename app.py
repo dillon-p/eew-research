@@ -47,7 +47,6 @@ conn.close()
 llm = ChatOllama(
     model="llama3.1:8b",
     temperature=0,
-    seed=123,
     streaming=True
 )
 
@@ -56,24 +55,24 @@ db = SQLDatabase.from_uri("sqlite:///eew.db")
 sql_prompt_text = '''
 You are a SQLite expert. Given an input question, follow these steps to create a syntactically correct {dialect} query.
 
-1. **Select the Appropriate Tables:**
-    - Identify the tables that contain the relevant data:
-        - The table `county_political_reporting` contains information about the party in control of counties.
-        - The table `rcra_violations` contains information about federally regulated facilities who have RCRA violations. Columns like `FAC_STATE`, `FAC_COUNTY`, and `FACILITY_NAME` are useful for filtering while `VIOLATION_TYPE_DESC` can be used to count the number of violations.
-        - The table `toxic_emissions` contains information about toxic pollutant emissions from the facilities. Columns like `FAC_STATE`, `FAC_COUNTY`, `FACILITY_NAME` and `POLLUTANT_NAME` are useful for filtering while `ANNUAL_EMISSIONS` can be used to sum the total amount of emissions.
+1. **Identify the tables that contain the relevant data:**
+    - DO NOT make up tables, use the ones below.
+    - The table `county_political_reporting` contains information about the party in control of counties.
+    - The table `rcra_violations` contains information about federally regulated facilities who have RCRA violations. Columns like `FAC_STATE`, `FAC_COUNTY`, and `FACILITY_NAME` are useful for filtering while `VIOLATION_TYPE_DESC` can be used to count the number of violations.
+    - The table `toxic_emissions` contains information about toxic pollutant emissions from the facilities. Columns like `FAC_STATE`, `FAC_COUNTY`, `FACILITY_NAME` and `POLLUTANT_NAME` are useful for filtering while `ANNUAL_EMISSIONS` can be used to sum the total amount of emissions.
     - DO NOT use the `toxic_emissions` table if the question is about RCRA violations and DO NOT use the `rcra_violations` table if the quesiton is about toxic pollutant emissions.
 2. **Select the Appropriate Columns:**
    - Use only the columns relevant to the question.
 3. **Understand any Filtering:**
    - Pay close attention to any filtering criteria in the question. For example, if the question specifies a particular year, state, county, facility name or pollutant ensure that the SQL query includes a `WHERE` clause to filter the data accordingly.
 4. **Construct the SQL Query:**
+   - Use the simplest query as possible to answer the question.
    - Use aggregate functions like `AVG`, `MAX`, or `MIN` as needed using `GROUP BY`.
    - If a column has `count` in the name, then it should be summed.
    - If the question involves ranking (e.g., "top 5 violators"), use `ORDER BY` with the appropriate column.
 5. **Limit the Results:**
    - Use the `LIMIT` clause to restrict the number of results to {top_k} if the total number of results exceeds 50, unless specified otherwise.
 
-Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Avoid querying `index` as a keyword because is not a valid column selection. Also, pay attention to which column is in which table.
 Return ONLY the SQLQuery with no other context given. Do not include the question in the output. Do not include the title 'SQLQuery' in the output.
 
     Use the following format:
@@ -146,7 +145,12 @@ def invoke_sql_graph(st_messages, callables):
         raise TypeError("callables must be a list")
     return graph.invoke({"question": st_messages}, config={"callbacks": callables})
 
-st.title("Rick-rah Bot")
+st.title("Toxic Pollutants and RCRA Violations Assistant")
+st.image("images/banner_image.png", use_container_width=False)
+st.write(
+    "Hello! \n"
+    "I am a chatbot built off of publicly available data from the EPA that can help you understand more about pollutants and Resource Conservation and Recovery Act violations in your area."
+)
 
 # if "expander_open" not in st.session_state:
 #     st.session_state.expander_open = True

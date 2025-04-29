@@ -4,11 +4,17 @@ from pathlib import Path
 import pandas as pd
 import sqlite3
 import glob
+import zipfile
 
-data_path = "../data/generated/"
+data_path = "data/"
+zip_path = "../generated.zip"
+
+with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    zip_ref.extractall(data_path)
+
 conn = sqlite3.connect('eew.db')
 
-csvs = glob.glob(f"{data_path}/*.csv")
+csvs = glob.glob(f"{data_path}/generated/*.csv")
 
 for csv in csvs:
     df = pd.read_csv(csv)

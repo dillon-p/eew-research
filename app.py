@@ -126,8 +126,6 @@ sql_agent_prompt = FewShotPromptTemplate(
         input_variables=["input", "table_info", "dialect", "top_k"],
 )
 
-print(sql_agent_prompt)
-
 class State(TypedDict):
     question: str
     query: str
@@ -199,24 +197,41 @@ st.write(
     """
 )
 
-# if "expander_open" not in st.session_state:
-#     st.session_state.expander_open = True
+prompt = st.chat_input("Enter your question here...")
 
-# with st.expander(label="Simple bot", expanded=st.session_state.expander_open):
-#     """A simple chatbot to 
-#     answer your questions about Toxic Pollutant emissions 
-#     and Resource Conservation and Recovery Act violations.
-#     """
+if "messages" not in st.session_state:
+    st.session_state["messages"] = [AIMessage(content="""What would you like to know?""")]
 
-if prompt := st.chat_input("What would you like to know?"):
+# Loop through all messages in the session state and render them as a chat on every st.refresh mech
+for msg in st.session_state.messages:
+    # https://docs.streamlit.io/develop/api-reference/chat/st.chat_message
+    # we store them as AIMessage and HumanMessage as its easier to send to LangGraph
+    if isinstance(msg, AIMessage):
+        st.chat_message("assistant").write(msg.content)
+    elif isinstance(msg, HumanMessage):
+        st.chat_message("user").write(msg.content)
+
+# Handle user input if provided
+if prompt:
+    st.session_state.messages.append(HumanMessage(content=prompt))
     st.chat_message("user").write(prompt)
+
     with st.chat_message("assistant"):
+        # create a new placeholder for streaming messages and other events, and give it context
         st_callback = get_streamlit_cb(st.container())
-        response = invoke_sql_graph(
-            prompt,
-            callables=[st_callback],
-        )
-        st.markdown("...")
+        response = invoke_sql_graph(st.session_state.messages, [st_callback])
+        # st.write(response)
+        st.session_state.messages.append(AIMessage(content=response["answer"][-1]))   # Add that last message to the st_message_state
+
+# if prompt := st.chat_input("What would you like to know?"):
+#     st.chat_message("user").write(prompt)
+#     with st.chat_message("assistant"):
+#         st_callback = get_streamlit_cb(st.container())
+#         response = invoke_sql_graph(
+#             prompt,
+#             callables=[st_callback],
+#         )
+#         st.markdown("...")
         # st.write(response)
 
 # if prompt is not None:

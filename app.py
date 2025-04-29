@@ -11,7 +11,7 @@ from typing import Annotated
 
 from langchain_ollama import ChatOllama
 from langchain_community.utilities import SQLDatabase
-from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
+from langchain_community.tools import QuerySQLDataBaseTool
 from langchain.prompts import PromptTemplate
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_community.callbacks.streamlit import StreamlitCallbackHandler
@@ -22,13 +22,19 @@ from langgraph.graph.message import add_messages
 from st_callback_util import get_streamlit_cb
 
 from dotenv import load_dotenv
+import zipfile
 
 load_dotenv()
 
-data_path = "data/generated/"
+data_path = "data/"
+zip_path = "generated.zip"
+
+with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    zip_ref.extractall(data_path)
+
 conn = sqlite3.connect('eew.db')
 
-csvs = glob.glob(f"{data_path}/*.csv")
+csvs = glob.glob(f"{data_path}/generated/*.csv")
 
 for csv in csvs:
     df = pd.read_csv(csv)
